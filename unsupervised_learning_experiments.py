@@ -15,3 +15,31 @@ import seaborn as sns
 input_file=  "https://github.com/grindrllc/public-datasets/blob/aa1d3a2c1df6005b33c8900d1113660a4b77feb5/example_view_df.csv?raw=true"
 df = pd.read_csv(input_file)
 print(df.head())
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, countDistinct, to_date, weekofyear, count, lag
+from pyspark.sql.window import Window
+
+# Create a spark session to begin creating spark elements
+spark = SparkSession.builder.appName("ViewAnalysis").getOrCreate()
+input_file=  "https://github.com/grindrllc/public-datasets/blob/aa1d3a2c1df6005b33c8900d1113660a4b77feb5/example_view_df.csv?raw=true"
+import requests
+
+local_filename = "/tmp/df.csv"
+# download file locally
+response = requests.get(input_file)
+# something we can write to
+with open(local_filename, "wb") as f:
+  f.write(response.content)
+df = spark.read.csv(local_filename, header = True, inferSchema = True)
+
+# Sort by timestamp
+df_sorted = df.orderBy("timestamp")
+
+# count unique viewer IDs
+unique_viewers = df.select(countDistinct("viewer_id")).collect()[0][0]
+
+# distribution of views per day
+df_day = df.withColumn("date",to_date("timestamp"))
+dist_day = df_day.groupby("date").agg(count("viewer_id").alias("viewcount"))
+dist_day.show()
