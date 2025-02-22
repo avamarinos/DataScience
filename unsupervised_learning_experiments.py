@@ -43,3 +43,26 @@ unique_viewers = df.select(countDistinct("viewer_id")).collect()[0][0]
 df_day = df.withColumn("date",to_date("timestamp"))
 dist_day = df_day.groupby("date").agg(count("viewer_id").alias("viewcount"))
 dist_day.show()
+
+import pandas as pd
+import numpy as np
+import networkx as nx
+from sklearn.cluster import KMeans
+from sklearn.ensemble import IsolationForest
+from sklearn.decomposition import NMF
+from sklearn.preprocessing import StandardScaler
+from scipy.signal import find_peaks
+from datetime import datetime
+
+df = pd.read_csv(input_file, parse_dates=["timestamp"])
+
+# feature engineering
+df["date"] = df["timestamp"].dt.date # access date
+df["week"] = df["timestamp"].dt.isocalendar().week
+df["hour"] = df["timestamp"].dt.hour
+
+# 1: Clustering users based on viewer behavior
+user_stats = df.groupby("viewer_id").agg({"timestamp":["count","min","max"]}) # different ways to look into timestamp
+user_stats.columns=["viewcount","firstview","lastview"]
+# HW: subtract first view from last view to find activity span. Create a new feature called activity span inside of user_stats.
+activity_span =
