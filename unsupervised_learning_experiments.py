@@ -65,4 +65,12 @@ df["hour"] = df["timestamp"].dt.hour
 user_stats = df.groupby("viewer_id").agg({"timestamp":["count","min","max"]}) # different ways to look into timestamp
 user_stats.columns=["viewcount","firstview","lastview"]
 # HW: subtract first view from last view to find activity span. Create a new feature called activity span inside of user_stats.
-activity_span =
+user_stats["activity_span"] = (user_stats["lastview"] - user_stats["firstview"]).dt.days #column called activity span
+
+# standardize
+scaler = StandardScaler()
+user_features = scaler.fit_transform(user_stats[["activity_span","viewcount"]])
+
+# KMeans Clustering
+kmeans = KMeans(n_clusters=4, random_state = 2025)
+user_stats["cluster"] = kmeans.fit_predict(user_features)
