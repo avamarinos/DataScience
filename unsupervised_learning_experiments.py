@@ -67,10 +67,22 @@ user_stats.columns=["viewcount","firstview","lastview"]
 # HW: subtract first view from last view to find activity span. Create a new feature called activity span inside of user_stats.
 user_stats["activity_span"] = (user_stats["lastview"] - user_stats["firstview"]).dt.days #column called activity span
 
-# standardize
 scaler = StandardScaler()
 user_features = scaler.fit_transform(user_stats[["activity_span","viewcount"]])
 
 # KMeans Clustering
 kmeans = KMeans(n_clusters=4, random_state = 2025)
 user_stats["cluster"] = kmeans.fit_predict(user_features)
+
+
+# anomaly detection
+isoforest = IsolationForest(contamination=0.05, random_state=2025)
+user_stats["anomaly"] = isoforest.fit_predict(user_features)
+
+# graph analysis to look at pagerank and community detection
+G = nx.DiGraph()
+for _,row in df.iterrows():
+    G.add_edge(row["viewer_id"],row["viewed_id"])
+
+page_rank_scores = nx.pagerank(G)
+user_stats["page_rank_scores"] = user_stats.index.map(lambda x: page_rank_scores.get(x,0)) # queries for x keys, if doesn't exist, 0
